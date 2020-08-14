@@ -2,7 +2,7 @@ import React from 'react';
 import { render } from 'react-dom';
 
 import App from './components/app';
-// import './assets/styles/main.css'
+import './assets/styles/main.css'
 
 let root = document.createElement('div');
 root.id = 'root';
