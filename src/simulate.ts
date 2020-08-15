@@ -20,58 +20,64 @@ const createBoids = (num, width, height): Boid[] => {
 const updateBoids = (boids: Boid[]) => boids.forEach(b => {
   const v1: Vector = rule1(b, boids);
   const v2: Vector = rule2(b, boids);
-  const v3: Vector = rule3(b);
+  const v3: Vector = rule3(b, boids);
   const sum: Vector = v1.add(v2).add(v3);
-  b.move(sum);
+  b.setVel(b.getVel().add(sum));
+  b.setPos(b.getPos().add(b.getVel()));
 });
 
-// boids move towards centre of the flock
-const rule1 = (cBoid, boids): Vector => {
-  // const centerOfMass = boids
-  //   .filter(boid => boid.id !== cBoid.id)
-  //   .reduce((acc, curr) => ([acc[0] + curr.x, acc[1] + curr.y]), [0, 0])
-  //   .map(i => i / boids.length - 1);
-  // return [(centerOfMass[0] - cBoid.x) / 100, (centerOfMass[1] - cBoid.y) / 100];
-  // return [.01, .01];
-  return new Vector(1, 1);
+// boids move towards centre of mass (com)
+const rule1 = (
+  currentBoid: Boid,
+  boids: Boid[]
+): Vector => {
+  let com = new Vector(0, 0)
+  boids.forEach(boid => {
+    if (boid.getId() !== currentBoid.getId()) {
+      com = com.add(boid.getPos())
+    }
+  });
+  return com
+    .divScalar(boids.length - 1)
+    .sub(currentBoid.getPos())
+    .divScalar(100);
 };
 
-const distance = (v1, v2) => Math.sqrt((v1.x - v2.x) ^ 2 + (v1.y - v2.y) ^ 2);
-
-// boids steer away from eachother if they get too close
-const rule2 = (cBoid, boids): Vector => {
-  // let move = [0, 0];
-  // boids
-  //   .filter(boid => boid.id !== cBoid.id)
-  //   .filter(boid => distance(boid, cBoid) < 1000)
-  //   .forEach(boid => {
-  //     const dist = distance(boid, cBoid);
-  //     const diff = [
-  //       Math.abs(boid.x - cBoid.x),
-  //       Math.abs(boid.y - cBoid.y)
-  //     ];
-  //     const mag = Math.sqrt(diff[0] ^ 2 + diff[1] ^ 2);
-  //     const normDiff = [
-  //       diff[0] / mag,
-  //       diff[1] / mag
-  //     ]
-  //     const finalDiff = [
-  //       normDiff[0] / dist,
-  //       normDiff[1] / dist
-  //     ]
-  //     move = [(move[0] + finalDiff[0]), (move[1] + finalDiff[1])]
-  //   });
-  // return move;
-  return new Vector(0.1, 0.1);
-
+// boids steer away from eachother to avoid collision
+const rule2 = (
+  currentBoid: Boid,
+  boids: Boid[]
+): Vector => {
+  let c: Vector = new Vector(0, 0);
+  boids.forEach(boid => {
+    if (boid.getId() !== currentBoid.getId()) {
+      const diff = boid.getPos().sub(currentBoid.getPos());
+      if (diff.mag() < 50) {
+        c = c.sub(diff);
+      }
+    }
+  });
+  return c //.divScalar(200);
 };
 
-const rule3 = (boid): Vector => {
-  return new Vector(0.1, 0.1);
+// boids try to match velocity with nearby boids
+const rule3 = (
+  currentBoid: Boid,
+  boids: Boid[]
+): Vector => {
+  let pv: Vector = new Vector(0, 0);
+  boids.forEach(boid => {
+    if (boid.getId() !== currentBoid.getId()) {
+      pv = pv.add(boid.getVel())
+    }
+  });
+  return pv
+    .divScalar(boids.length - 1)
+    .sub(currentBoid.getVel())
+    .divScalar(10);
 };
 
 const drawBoids = (canvas, boids) => {
-  console.log("draw");
   const ctx = canvas.current.getContext('2d');
   ctx.clearRect(0, 0, canvas.current.width, canvas.current.height);
   ctx.beginPath();
@@ -80,7 +86,7 @@ const drawBoids = (canvas, boids) => {
   ctx.fill();
   boids.forEach((boid) => {
     ctx.beginPath();
-    ctx.arc(boid.x, boid.y, 5, 0, Math.PI * 2, false);
+    ctx.arc(boid.getPos().getX(), boid.getPos().getY(), 5, 0, Math.PI * 2,false);
     ctx.fillStyle = 'red';
     ctx.fill();
     ctx.closePath();

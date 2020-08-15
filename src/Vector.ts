@@ -30,4 +30,8 @@ export class Vector {
   mag(): number {
     return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
   }
+
+  divScalar(s: number): Vector {
+    return new Vector(this.x / s, this.y / s);
+  }
 }

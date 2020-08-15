@@ -31,4 +31,10 @@ describe('Vector', () => {
     const mag: number = new Vector(6, 8).mag();
     expect(mag).toBe(10);
   })
+
+  it('should divide (10, 12) by 2', () => {
+    const v: Vector = new Vector(10, 12).divScalar(2);
+    expect(v.getX()).toBe(5);
+    expect(v.getY()).toBe(6);
+  })
 })
