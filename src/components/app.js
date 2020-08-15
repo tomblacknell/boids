@@ -1,6 +1,6 @@
 /* eslint-disable no-undef */
 import React, { useRef, useEffect, useState } from 'react';
-import { generateBoids, drawBoids, updateBoids } from '../boids';
+import { generateBoids, drawBoids, updateBoids } from '../simulate';
 
 const App = () => {
   const canvas = useRef(null);

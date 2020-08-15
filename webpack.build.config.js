@@ -3,7 +3,6 @@ const path = require('path')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const BabiliPlugin = require('babili-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
-// Any directories you will be adding code/files into, need to be added to this array so webpack will pick them up
 const defaultInclude = path.resolve(__dirname, 'src')
 module.exports = {
   module: {
@@ -17,8 +16,9 @@ module.exports = {
         include: defaultInclude
       },
       {
-        test: /\.jsx?$/,
-        use: [{ loader: 'babel-loader' }],
+        test: /\.(t|j)sx?$/,
+        use: [{ loader: 'ts-loader' }],
+        exclude: /node_modules/,
         include: defaultInclude
       },
       {
@@ -33,7 +33,6 @@ module.exports = {
       }
     ]
   },
-  // target: 'electron-renderer',
   plugins: [
     new HtmlWebpackPlugin(),
     new MiniCssExtractPlugin({

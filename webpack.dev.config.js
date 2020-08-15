@@ -13,8 +13,9 @@ module.exports = {
         include: defaultInclude
       },
       {
-        test: /\.jsx?$/,
-        use: [{ loader: 'babel-loader' }],
+        test: /\.(t|j)sx?$/,
+        use: [{ loader: 'ts-loader' }],
+        exclude: /node_modules/,
         include: defaultInclude
       },
       {
