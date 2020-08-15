@@ -6,6 +6,9 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const defaultInclude = path.resolve(__dirname, 'src')
 module.exports = {
   module: {
+    resolve: {
+      extensions: [ '.tsx', '.ts', '.js' ],
+    },
     rules: [
       {
         test: /\.css$/,

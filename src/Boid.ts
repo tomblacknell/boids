@@ -1,9 +1,9 @@
 import { Vector } from './Vector';
 
 export class Boid {
-  id: number;
-  pos: Vector;
-  vel: Vector;
+  private id: number;
+  private pos: Vector;
+  private vel: Vector;
   
   constructor(id: number, pos: Vector, vel: Vector) {
     this.id = id;
@@ -11,11 +11,19 @@ export class Boid {
     this.vel = vel;
   }
   
-  getId() {
+  getId(): number {
+    return this.id;
+  }
+
+  getPos(): Vector {
     return this.pos;
   }
 
-  getPos() {
-    return this.pos;
+  getVel(): Vector {
+    return this.vel;
+  }
+
+  move(v: Vector) {
+    this.pos = this.pos.add(v);
   }
 }

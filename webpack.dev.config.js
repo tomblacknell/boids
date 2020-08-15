@@ -1,11 +1,13 @@
 const webpack = require('webpack')
 const path = require('path')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
-const { spawn } = require('child_process')
 // Any directories you will be adding code/files into, need to be added to this array so webpack will pick them up
 const defaultInclude = path.resolve(__dirname, 'src')
 module.exports = {
   module: {
+    resolve: {
+      extensions: [ '.tsx', '.ts', '.js' ],
+    },
     rules: [
       {
         test: /\.css$/,
@@ -30,7 +32,6 @@ module.exports = {
       }
     ]
   },
-  // target: 'electron-renderer',
   plugins: [
     new HtmlWebpackPlugin(),
     new webpack.DefinePlugin({
