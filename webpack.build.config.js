@@ -5,10 +5,11 @@ const BabiliPlugin = require('babili-webpack-plugin')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 const defaultInclude = path.resolve(__dirname, 'src')
 module.exports = {
+  entry: './src/index.tsx',
+  resolve: {
+    extensions: [ '.tsx', '.ts', '.js' ],
+  },
   module: {
-    resolve: {
-      extensions: [ '.tsx', '.ts', '.js' ],
-    },
     rules: [
       {
         test: /\.css$/,
