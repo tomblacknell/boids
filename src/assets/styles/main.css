@@ -1,4 +1,4 @@
-html, body, #root, #main, .app {
+html, body, #root, .app {
   height: 100%;
   width: 100%;
   margin: 0;
@@ -10,13 +10,37 @@ html, body, #root, #main, .app {
 }
 
 canvas {
-  flex-grow: 1;
+  width: 100%;
+}
+
+.controls {
+  width: 20%;
+  border: 2px solid white;
+  color: white;
+  margin-left: 10px;
+}
+
+.panels {
+  display: flex;
+  height: 100%;
+  background-color: black;
+  padding: 10px;
 }
 
 h2 {
-  margin: 1rem;
+  margin: .5rem;
 }
 
 .header {
-  background-color: #dcdcdc;
+  background-color: #d2d2d2;;
+  border-top: 2px solid white;
+    border-left: 2px solid white;
+    border-right: 2px solid #858585;
+    border-bottom: 2px solid #858585;
+}
+
+#main {
+  display: flex;
+  flex-direction: row;
+  flex-grow: 1;
 }

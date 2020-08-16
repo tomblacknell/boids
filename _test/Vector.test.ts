@@ -37,4 +37,10 @@ describe('Vector', () => {
     expect(v.getX()).toBe(5);
     expect(v.getY()).toBe(6);
   })
+
+  it('should multiply (2, 3) by 2', () => {
+    const v: Vector = new Vector(2, 3).mulScalar(2);
+    expect(v.getX()).toBe(4);
+    expect(v.getY()).toBe(6);
+  })
 })

@@ -26,6 +26,7 @@ const updateBoids = (boids: Boid[], canvasRef: RefObject<HTMLCanvasElement>) => 
       .add(rule3(b, boids))
       .add(boundPosition(b, width, height));
     b.setVel(b.getVel().add(sum));
+    limitVelocity(b);
     b.setPos(b.getPos().add(b.getVel()));
   }
 });
@@ -61,7 +62,7 @@ const rule2 = (
       }
     }
   });
-  return c.divScalar(100);
+  return c.divScalar(300);
 };
 
 // boids try to match velocity with nearby boids
@@ -97,6 +98,14 @@ const boundPosition = (boid: Boid, xMax: number, yMax: number): Vector => {
   }
 
   return v;
+}
+
+const limitVelocity = (b: Boid) => {
+  const limit: number = 5;
+  const vel = b.getVel();
+  if (vel.mag() > limit) {
+    b.setVel(vel.divScalar(vel.mag()).mulScalar(limit))
+  }
 }
 
 const drawBoids = (canvas, boids) => {

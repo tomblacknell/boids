@@ -58,12 +58,17 @@ class App extends React.Component<AppProps, AppState> {
 
   render() {
     return (
-      <div id="main" ref={this.main}>
-        <canvas
-          id="boid-canvas"
-          ref={this.canvas}
-          className="canvas"
-        />
+      <div className="panels">
+        <div id="main" ref={this.main}>
+          <canvas
+            id="boid-canvas"
+            ref={this.canvas}
+            className="canvas"
+          />
+        </div>
+        <div className="controls">
+          Stuff
+        </div>
       </div>
     )
   }

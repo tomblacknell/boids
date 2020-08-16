@@ -42,4 +42,8 @@ export class Vector {
   divScalar(s: number): Vector {
     return new Vector(this.x / s, this.y / s);
   }
+
+  mulScalar(s: number): Vector {
+  return this.divScalar(1 / s);
+  }
 }
