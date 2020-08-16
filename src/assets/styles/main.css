@@ -1,6 +1,22 @@
-html, body, #root, #main {
+html, body, #root, #main, .app {
   height: 100%;
   width: 100%;
   margin: 0;
 }
 
+.app {
+  display: flex;
+  flex-direction: column;
+}
+
+canvas {
+  flex-grow: 1;
+}
+
+h2 {
+  margin: 1rem;
+}
+
+.header {
+  background-color: #dcdcdc;
+}

@@ -1,5 +1,6 @@
 import { Boid } from './Boid';
 import { Vector } from './Vector';
+import { RefObject } from 'react';
 
 const createBoids = (num, width, height): Boid[] => {
   const boids: Boid[] = [];
@@ -10,20 +11,23 @@ const createBoids = (num, width, height): Boid[] => {
         Math.random() * width,
         Math.random() * height,
       ),
-      new Vector(1, 1),
+      new Vector(0, 0),
     );
     boids.push(boid);
   }
   return boids;
 };
 
-const updateBoids = (boids: Boid[]) => boids.forEach(b => {
-  const v1: Vector = rule1(b, boids);
-  const v2: Vector = rule2(b, boids);
-  const v3: Vector = rule3(b, boids);
-  const sum: Vector = v1.add(v2).add(v3);
-  b.setVel(b.getVel().add(sum));
-  b.setPos(b.getPos().add(b.getVel()));
+const updateBoids = (boids: Boid[], canvasRef: RefObject<HTMLCanvasElement>) => boids.forEach(b => {
+  if (canvasRef.current) {
+    const { width, height } = canvasRef.current;
+    const sum: Vector = rule1(b, boids)
+      .add(rule2(b, boids))
+      .add(rule3(b, boids))
+      .add(boundPosition(b, width, height));
+    b.setVel(b.getVel().add(sum));
+    b.setPos(b.getPos().add(b.getVel()));
+  }
 });
 
 // boids move towards centre of mass (com)
@@ -40,7 +44,7 @@ const rule1 = (
   return com
     .divScalar(boids.length - 1)
     .sub(currentBoid.getPos())
-    .divScalar(100);
+    .divScalar(1000);
 };
 
 // boids steer away from eachother to avoid collision
@@ -52,12 +56,12 @@ const rule2 = (
   boids.forEach(boid => {
     if (boid.getId() !== currentBoid.getId()) {
       const diff = boid.getPos().sub(currentBoid.getPos());
-      if (diff.mag() < 50) {
+      if (diff.mag() < 75) {
         c = c.sub(diff);
       }
     }
   });
-  return c //.divScalar(200);
+  return c.divScalar(100);
 };
 
 // boids try to match velocity with nearby boids
@@ -77,17 +81,35 @@ const rule3 = (
     .divScalar(10);
 };
 
+const boundPosition = (boid: Boid, xMax: number, yMax: number): Vector => {
+  let v: Vector = new Vector(0, 0);
+  const displace: number = 10;
+  if (boid.getPos().getX() < 0) {
+    v.setX(displace);
+  } else if (boid.getPos().getX() > xMax) {
+    v.setX(-displace);
+  }
+
+  if (boid.getPos().getY() < 0) {
+    v.setY(displace);
+  } else if (boid.getPos().getY() > yMax) {
+    v.setY(-displace);
+  }
+
+  return v;
+}
+
 const drawBoids = (canvas, boids) => {
   const ctx = canvas.current.getContext('2d');
   ctx.clearRect(0, 0, canvas.current.width, canvas.current.height);
   ctx.beginPath();
-  ctx.fillStyle = 'lightblue';
+  ctx.fillStyle = '#000';
   ctx.rect(0, 0, canvas.current.width, canvas.current.height);
   ctx.fill();
   boids.forEach((boid) => {
     ctx.beginPath();
-    ctx.arc(boid.getPos().getX(), boid.getPos().getY(), 5, 0, Math.PI * 2,false);
-    ctx.fillStyle = 'red';
+    ctx.arc(boid.getPos().getX(), boid.getPos().getY(), 4, 0, Math.PI * 2, false);
+    ctx.fillStyle = '#fc0303';
     ctx.fill();
     ctx.closePath();
   });

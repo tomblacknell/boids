@@ -11,9 +11,17 @@ export class Vector {
     return this.x;
   };
 
+  setX(x: number) {
+    this.x = x;
+  }
+
   getY(): number {
     return this.y;
   };
+
+  setY(y: number) {
+    this.y = y;
+  }
 
   rev(): Vector {
     return new Vector(-this.x, -this.y);
