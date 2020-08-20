@@ -21,9 +21,9 @@ const createBoids = (num, width, height): Boid[] => {
 const updateBoids = (boids: Boid[], canvasRef: RefObject<HTMLCanvasElement>) => boids.forEach(b => {
   if (canvasRef.current) {
     const { width, height } = canvasRef.current;
-    const sum: Vector = rule1(b, boids)
-      .add(rule2(b, boids))
-      .add(rule3(b, boids))
+    const sum: Vector = cohesion(b, boids)
+      .add(separation(b, boids))
+      .add(alignment(b, boids))
       .add(boundPosition(b, width, height));
     b.setVel(b.getVel().add(sum));
     limitVelocity(b);
@@ -32,24 +32,31 @@ const updateBoids = (boids: Boid[], canvasRef: RefObject<HTMLCanvasElement>) => 
 });
 
 // boids move towards centre of mass (com)
-const rule1 = (
+const cohesion = (
   currentBoid: Boid,
   boids: Boid[]
 ): Vector => {
   let com = new Vector(0, 0)
+  // console.log('cohesion')
+  // const visibleBoids = boids.filter(
+    // boid => boid.getPos().sub(currentBoid.getPos()).mag() < 200)
+    let boidsInRange = 0;
   boids.forEach(boid => {
-    if (boid.getId() !== currentBoid.getId()) {
-      com = com.add(boid.getPos())
+    if (boid.getId() !== currentBoid.getId()) {  
+      if (boid.getPos().sub(currentBoid.getPos()).mag() < 300) {
+        com = com.add(boid.getPos())
+        boidsInRange++;
+      }
     }
   });
   return com
-    .divScalar(boids.length - 1)
+    .divScalar(boidsInRange > 1 ? boidsInRange - 1 : 1)
     .sub(currentBoid.getPos())
     .divScalar(1000);
 };
 
 // boids steer away from eachother to avoid collision
-const rule2 = (
+const separation = (
   currentBoid: Boid,
   boids: Boid[]
 ): Vector => {
@@ -57,7 +64,7 @@ const rule2 = (
   boids.forEach(boid => {
     if (boid.getId() !== currentBoid.getId()) {
       const diff = boid.getPos().sub(currentBoid.getPos());
-      if (diff.mag() < 75) {
+      if (diff.mag() < 50) {
         c = c.sub(diff);
       }
     }
@@ -66,7 +73,7 @@ const rule2 = (
 };
 
 // boids try to match velocity with nearby boids
-const rule3 = (
+const alignment = (
   currentBoid: Boid,
   boids: Boid[]
 ): Vector => {
@@ -82,6 +89,7 @@ const rule3 = (
     .divScalar(10);
 };
 
+// keep boids from leaving the canvas
 const boundPosition = (boid: Boid, xMax: number, yMax: number): Vector => {
   let v: Vector = new Vector(0, 0);
   const displace: number = 10;
@@ -101,7 +109,7 @@ const boundPosition = (boid: Boid, xMax: number, yMax: number): Vector => {
 }
 
 const limitVelocity = (b: Boid) => {
-  const limit: number = 5;
+  const limit: number = 3;
   const vel = b.getVel();
   if (vel.mag() > limit) {
     b.setVel(vel.divScalar(vel.mag()).mulScalar(limit))
@@ -117,6 +125,10 @@ const drawBoids = (canvas, boids) => {
   ctx.fill();
   boids.forEach((boid) => {
     ctx.beginPath();
+    ctx.arc(boid.getPos().getX(), boid.getPos().getY(), 8, 0, Math.PI * 2, false);
+    ctx.fillStyle = '#fdcece';
+    ctx.fill();
+    ctx.beginPath();
     ctx.arc(boid.getPos().getX(), boid.getPos().getY(), 4, 0, Math.PI * 2, false);
     ctx.fillStyle = '#fc0303';
     ctx.fill();
@@ -128,7 +140,7 @@ export {
   createBoids,
   updateBoids,
   drawBoids,
-  rule1,
-  rule2,
-  rule3,
+  cohesion,
+  separation,
+  alignment,
 }

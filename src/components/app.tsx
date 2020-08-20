@@ -5,9 +5,9 @@ const App = ({ }) => {
 
   return (
     <div className="app">
-      <div className="header">
+      {/* <div className="header">
         <h2>boidsim</h2>
-      </div>
+      </div> */}
       <Boids />
     </div>
   );
