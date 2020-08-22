@@ -4,7 +4,7 @@ import { createRef } from 'react';
 import { createBoids, drawBoids, updateBoids } from '../simulate';
 import { Boid } from '../Boid';
 
-interface AppState { initialBoids: Boid[], started: Boolean };
+interface AppState { initialBoids: Boid[], started: Boolean, rule1: boolean };
 interface AppProps { };
 
 class App extends React.Component<AppProps, AppState> {
@@ -14,6 +14,7 @@ class App extends React.Component<AppProps, AppState> {
     this.state = {
       initialBoids: [],
       started: false,
+      rule1: true,
     }
   }
 
@@ -35,12 +36,11 @@ class App extends React.Component<AppProps, AppState> {
         ...this.state,
         initialBoids: createBoids(50, this.canvas.current.width, this.canvas.current.height)
       }, () => {
-        let frame;
         let boids: Boid[] = this.state.initialBoids;
         const animate = () => {
           drawBoids(this.canvas, boids);
           updateBoids(boids, this.canvas);
-          frame = requestAnimationFrame(animate);
+          requestAnimationFrame(animate);
         };
         if (boids && !this.state.started) {
           this.setState({ ...this.state, started: true });
@@ -74,21 +74,33 @@ class App extends React.Component<AppProps, AppState> {
             })
           }}>Restart</button>
 
-          <div className="rule">
+          <div id="rule-1" className="rule">
             <h3>Rule 1: Cohesion</h3>
+            <input 
+              type="checkbox"
+              id="rule-1-toggle"
+              name="rule-1-toggle"
+              value="Enabled"
+              checked={this.state.rule1}
+              onClick={() => this.setState({ rule1: !this.state.rule1 })}
+            />
             {/* <input type="range" min="1" max="100" /> */}
           </div>
           <div className="rule">
             <h3>Rule 2: Separation</h3>
+            <input type="checkbox" id="rule-2-toggle" name="rule-2-toggle" value="Enabled" checked />
           </div>
           <div className="rule">
             <h3>Rule 3: Alignment</h3>
+            <input type="checkbox" id="rule-3-toggle" name="rule-3-toggle" value="Enabled" checked />
           </div>
           <div className="rule">
             <h3>Rule 4: Velocity Limit</h3>
+            <input type="checkbox" id="rule-4-toggle" name="rule-4-toggle" value="Enabled" checked />
           </div>
           <div className="rule">
             <h3>Rule 5: Bounds</h3>
+            <input type="checkbox" id="rule-5-toggle" name="rule-5-toggle" value="Enabled" checked />
           </div>
         </div>
       </div>

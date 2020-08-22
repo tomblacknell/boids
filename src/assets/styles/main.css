@@ -28,6 +28,10 @@ canvas {
     /* flex-wrap: wrap; */
     flex-direction: column;
   }
+
+  .controls {
+    width: unset;
+  }
 }
 
 .controls > .rule {
@@ -44,7 +48,6 @@ canvas {
 .panels {
   display: flex;
   background-color: black;
-  padding: 10px;
   flex-grow: 1;
 }
 
@@ -64,4 +67,5 @@ h2 {
   display: flex;
   flex-direction: row;
   flex-grow: 1;
+  height: 100vh;
 }
