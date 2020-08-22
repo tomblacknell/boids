@@ -3,8 +3,13 @@ import * as React from 'react';
 import { createRef } from 'react';
 import { createBoids, drawBoids, updateBoids } from '../simulate';
 import { Boid } from '../Boid';
+import Rule from '../Rule';
 
-interface AppState { initialBoids: Boid[], started: Boolean, rule1: boolean };
+interface AppState {
+  initialBoids: Boid[],
+  started: Boolean,
+  controls: { [rule: string]: Rule }
+};
 interface AppProps { };
 
 class App extends React.Component<AppProps, AppState> {
@@ -14,7 +19,23 @@ class App extends React.Component<AppProps, AppState> {
     this.state = {
       initialBoids: [],
       started: false,
-      rule1: true,
+      controls: {
+        rule1: {
+          enabled: true,
+        },
+        rule2: {
+          enabled: true,
+        },
+        rule3: {
+          enabled: true,
+        },
+        rule4: {
+          enabled: true,
+        },
+        rule5: {
+          enabled: true,
+        },
+      },
     }
   }
 
@@ -39,7 +60,7 @@ class App extends React.Component<AppProps, AppState> {
         let boids: Boid[] = this.state.initialBoids;
         const animate = () => {
           drawBoids(this.canvas, boids);
-          updateBoids(boids, this.canvas);
+          updateBoids(boids, this.canvas, this.state.controls);
           requestAnimationFrame(animate);
         };
         if (boids && !this.state.started) {
@@ -53,6 +74,24 @@ class App extends React.Component<AppProps, AppState> {
   componentDidMount() {
     this.fixDpi(window.devicePixelRatio);
     this.start();
+  }
+
+  createRuleToggle(ruleName: string) {
+    return (
+      <input
+        type="checkbox"
+        id={`${ruleName}-toggle`}
+        name={`${ruleName}-toggle`}
+        checked={this.state.controls[ruleName].enabled}
+        onClick={() => this.setState({
+          controls: {
+            ...this.state.controls,
+            [ruleName]: {
+              enabled: !this.state.controls[ruleName].enabled
+            }
+          }
+        })}
+      />)
   }
 
   render() {
@@ -76,31 +115,23 @@ class App extends React.Component<AppProps, AppState> {
 
           <div id="rule-1" className="rule">
             <h3>Rule 1: Cohesion</h3>
-            <input 
-              type="checkbox"
-              id="rule-1-toggle"
-              name="rule-1-toggle"
-              value="Enabled"
-              checked={this.state.rule1}
-              onClick={() => this.setState({ rule1: !this.state.rule1 })}
-            />
-            {/* <input type="range" min="1" max="100" /> */}
+            {this.createRuleToggle('rule1')}
           </div>
           <div className="rule">
             <h3>Rule 2: Separation</h3>
-            <input type="checkbox" id="rule-2-toggle" name="rule-2-toggle" value="Enabled" checked />
+            {this.createRuleToggle('rule2')}
           </div>
           <div className="rule">
             <h3>Rule 3: Alignment</h3>
-            <input type="checkbox" id="rule-3-toggle" name="rule-3-toggle" value="Enabled" checked />
+            {this.createRuleToggle('rule3')}
           </div>
           <div className="rule">
-            <h3>Rule 4: Velocity Limit</h3>
-            <input type="checkbox" id="rule-4-toggle" name="rule-4-toggle" value="Enabled" checked />
+            <h3>Rule 4: Bounds</h3>
+            {this.createRuleToggle('rule4')}
           </div>
           <div className="rule">
-            <h3>Rule 5: Bounds</h3>
-            <input type="checkbox" id="rule-5-toggle" name="rule-5-toggle" value="Enabled" checked />
+            <h3>Rule 5: Velocity Limit</h3>
+            {this.createRuleToggle('rule5')}
           </div>
         </div>
       </div>

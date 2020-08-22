@@ -25,7 +25,6 @@ canvas {
 
 @media only screen and (max-width: 600px) {
   .panels {
-    /* flex-wrap: wrap; */
     flex-direction: column;
   }
 

@@ -1,6 +1,8 @@
+import { RefObject } from 'react';
+
 import { Boid } from './Boid';
 import { Vector } from './Vector';
-import { RefObject } from 'react';
+import Rule from './Rule';
 
 const createBoids = (num, width, height): Boid[] => {
   const boids: Boid[] = [];
@@ -18,15 +20,30 @@ const createBoids = (num, width, height): Boid[] => {
   return boids;
 };
 
-const updateBoids = (boids: Boid[], canvasRef: RefObject<HTMLCanvasElement>) => boids.forEach(b => {
+const updateBoids = (
+  boids: Boid[],
+  canvasRef: RefObject<HTMLCanvasElement>,
+  controls: { [rule: string]: Rule },
+) => boids.forEach(b => {
   if (canvasRef.current) {
     const { width, height } = canvasRef.current;
-    const sum: Vector = cohesion(b, boids)
-      .add(separation(b, boids))
-      .add(alignment(b, boids))
-      .add(boundPosition(b, width, height));
+    let sum: Vector = new Vector(0, 0);
+    if (controls.rule1.enabled) {
+      sum = sum.add(cohesion(b, boids));
+    }
+    if (controls.rule2.enabled) {
+      sum = sum.add(separation(b, boids))
+    }
+    if (controls.rule3.enabled) {
+      sum = sum.add(alignment(b, boids))
+    }
+    if (controls.rule4.enabled) {
+      sum = sum.add(boundPosition(b, width, height));
+    }
     b.setVel(b.getVel().add(sum));
-    limitVelocity(b);
+    if (controls.rule5.enabled) {
+      limitVelocity(b);
+    }
     b.setPos(b.getPos().add(b.getVel()));
   }
 });
@@ -39,10 +56,10 @@ const cohesion = (
   let com = new Vector(0, 0)
   // console.log('cohesion')
   // const visibleBoids = boids.filter(
-    // boid => boid.getPos().sub(currentBoid.getPos()).mag() < 200)
-    let boidsInRange = 0;
+  // boid => boid.getPos().sub(currentBoid.getPos()).mag() < 200)
+  let boidsInRange = 0;
   boids.forEach(boid => {
-    if (boid.getId() !== currentBoid.getId()) {  
+    if (boid.getId() !== currentBoid.getId()) {
       if (boid.getPos().sub(currentBoid.getPos()).mag() < 300) {
         com = com.add(boid.getPos())
         boidsInRange++;
