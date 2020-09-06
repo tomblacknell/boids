@@ -105,14 +105,13 @@ class App extends React.Component<AppProps, AppState> {
           />
         </div>
         <div className="controls">
-          <h2>boid_sim</h2>
+          <h2>BoidSim</h2>
           <p>Boids move according to several rules, configurable below.</p>
           <button onClick={() => {
             this.setState({ started: false, initialBoids: [] }, () => {
               this.start();
             })
           }}>Restart</button>
-
           <div id="rule-1" className="rule">
             <h3>Rule 1: Cohesion</h3>
             {this.createRuleToggle('rule1')}
@@ -137,7 +136,6 @@ class App extends React.Component<AppProps, AppState> {
       </div>
     )
   }
-
 }
 
 export default App;
