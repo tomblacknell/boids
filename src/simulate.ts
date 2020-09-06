@@ -13,7 +13,10 @@ const createBoids = (num, width, height): Boid[] => {
         Math.random() * width,
         Math.random() * height,
       ),
-      new Vector(0, 0),
+      new Vector(
+        (Math.random() * 10) - 5,
+        (Math.random() * 10) - 5
+      ),
     );
     boids.push(boid);
   }
@@ -48,28 +51,28 @@ const updateBoids = (
   }
 });
 
-// boids move towards centre of mass (com)
+const visualRange = 300;
+
+// boids move towards local centre of mass (com)
 const cohesion = (
   currentBoid: Boid,
   boids: Boid[]
 ): Vector => {
-  let com = new Vector(0, 0)
-  // console.log('cohesion')
-  // const visibleBoids = boids.filter(
-  // boid => boid.getPos().sub(currentBoid.getPos()).mag() < 200)
-  let boidsInRange = 0;
+  let center = new Vector(0, 0)
+  let boidsInRange = 0
   boids.forEach(boid => {
-    if (boid.getId() !== currentBoid.getId()) {
-      if (boid.getPos().sub(currentBoid.getPos()).mag() < 300) {
-        com = com.add(boid.getPos())
-        boidsInRange++;
-      }
+    if (currentBoid.getPos().distanceFrom(boid.getPos()) < visualRange) {
+      center = center.add(boid.getPos())
+      boidsInRange++
     }
   });
-  return com
-    .divScalar(boidsInRange > 1 ? boidsInRange - 1 : 1)
-    .sub(currentBoid.getPos())
-    .divScalar(1000);
+  if (boidsInRange) {
+    return center
+      .divScalar(boidsInRange)
+      .sub(currentBoid.getPos())
+      .divScalar(200)
+  }
+  return new Vector(0, 0)
 };
 
 // boids steer away from eachother to avoid collision
@@ -77,16 +80,16 @@ const separation = (
   currentBoid: Boid,
   boids: Boid[]
 ): Vector => {
-  let c: Vector = new Vector(0, 0);
+  let move: Vector = new Vector(0, 0);
   boids.forEach(boid => {
     if (boid.getId() !== currentBoid.getId()) {
-      const diff = boid.getPos().sub(currentBoid.getPos());
-      if (diff.mag() < 50) {
-        c = c.sub(diff);
+      // const diff = boid.getPos().sub(currentBoid.getPos());
+      if (currentBoid.getPos().distanceFrom(boid.getPos()) < 50) {
+        move = move.add(currentBoid.getPos().sub(boid.getPos()));
       }
     }
   });
-  return c.divScalar(300);
+  return move.divScalar(20);
 };
 
 // boids try to match velocity with nearby boids
@@ -94,16 +97,21 @@ const alignment = (
   currentBoid: Boid,
   boids: Boid[]
 ): Vector => {
-  let pv: Vector = new Vector(0, 0);
+  let avgV: Vector = new Vector(0, 0)
+  let boidsInRange = 0
   boids.forEach(boid => {
-    if (boid.getId() !== currentBoid.getId()) {
-      pv = pv.add(boid.getVel())
+    if (currentBoid.getPos().distanceFrom(boid.getPos()) < visualRange) {
+      avgV = avgV.add(boid.getVel())
+      boidsInRange++;
     }
   });
-  return pv
-    .divScalar(boids.length - 1)
-    .sub(currentBoid.getVel())
-    .divScalar(10);
+  if (boidsInRange) {
+    return avgV
+      .divScalar(boidsInRange)
+      .sub(currentBoid.getVel())
+      .divScalar(20);
+  }
+  return new Vector(0, 0);
 };
 
 // keep boids from leaving the canvas
@@ -126,7 +134,7 @@ const boundPosition = (boid: Boid, xMax: number, yMax: number): Vector => {
 }
 
 const limitVelocity = (b: Boid) => {
-  const limit: number = 3;
+  const limit: number = 6;
   const vel = b.getVel();
   if (vel.mag() > limit) {
     b.setVel(vel.divScalar(vel.mag()).mulScalar(limit))

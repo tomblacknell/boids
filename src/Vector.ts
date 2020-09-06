@@ -39,6 +39,10 @@ export class Vector {
     return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
   }
 
+  distanceFrom(b: Vector): number {
+    return Math.sqrt(Math.pow(this.x - b.getX(), 2) + Math.pow(this.y - b.getY(), 2));
+  }
+
   divScalar(s: number): Vector {
     return new Vector(this.x / s, this.y / s);
   }
