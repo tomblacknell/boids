@@ -8,7 +8,7 @@ import Rule from '../Rule';
 interface AppState {
   initialBoids: Boid[],
   started: Boolean,
-  controls: { [rule: string]: Rule }
+  controls: { [ruleEnbaled: string]: any }
 };
 interface AppProps { };
 
@@ -20,21 +20,12 @@ class App extends React.Component<AppProps, AppState> {
       initialBoids: [],
       started: false,
       controls: {
-        rule1: {
-          enabled: true,
-        },
-        rule2: {
-          enabled: true,
-        },
-        rule3: {
-          enabled: true,
-        },
-        rule4: {
-          enabled: true,
-        },
-        rule5: {
-          enabled: true,
-        },
+        rule1Enabled: true,
+        rule2Enabled: true,
+        rule3Enabled: true,
+        rule4Enabled: true,
+        rule5Enabled: true,
+        numberOfBoids: 50,
       },
     }
   }
@@ -55,7 +46,11 @@ class App extends React.Component<AppProps, AppState> {
     if (this.canvas.current) {
       this.setState({
         ...this.state,
-        initialBoids: createBoids(50, this.canvas.current.width, this.canvas.current.height)
+        initialBoids: createBoids(
+          this.state.controls.numberOfBoids,
+          this.canvas.current.width,
+          this.canvas.current.height
+        )
       }, () => {
         let boids: Boid[] = this.state.initialBoids;
         const animate = () => {
@@ -76,22 +71,46 @@ class App extends React.Component<AppProps, AppState> {
     this.start();
   }
 
-  createRuleToggle(ruleName: string) {
+  toggle(ruleName: string) {
     return (
-      <input
-        type="checkbox"
-        id={`${ruleName}-toggle`}
-        name={`${ruleName}-toggle`}
-        checked={this.state.controls[ruleName].enabled}
-        onClick={() => this.setState({
-          controls: {
-            ...this.state.controls,
-            [ruleName]: {
-              enabled: !this.state.controls[ruleName].enabled
+      <div>
+        <input
+          type="checkbox"
+          id={`${ruleName}-toggle`}
+          name={`${ruleName}-toggle`}
+          checked={this.state.controls[ruleName]}
+          onClick={() => this.setState({
+            controls: {
+              ...this.state.controls,
+              [ruleName]: !this.state.controls[ruleName]
             }
-          }
-        })}
-      />)
+          })}
+        />
+      </div>
+    )
+  }
+
+  slider(controlName: string, max: number, min: number) {
+    return (
+      <div className="slider">
+        <p>{`${controlName}:`}</p>
+        <p>{this.state.controls[controlName]}</p>
+        <input
+          type="range"
+          min={min}
+          max={max}
+          value={this.state.controls[controlName]}
+          onChange={event => {
+            this.setState({
+              controls: {
+                ...this.state.controls,
+                [controlName]: event.target.value,
+              }
+            })
+          }}
+        />
+      </div>
+    )
   }
 
   render() {
@@ -112,25 +131,26 @@ class App extends React.Component<AppProps, AppState> {
               this.start();
             })
           }}>Restart</button>
+          {this.slider('numberOfBoids', 500, 1)}
           <div id="rule-1" className="rule">
             <h3>Rule 1: Cohesion</h3>
-            {this.createRuleToggle('rule1')}
+            {this.toggle('rule1Enabled')}
           </div>
           <div className="rule">
             <h3>Rule 2: Separation</h3>
-            {this.createRuleToggle('rule2')}
+            {this.toggle('rule2Enabled')}
           </div>
           <div className="rule">
             <h3>Rule 3: Alignment</h3>
-            {this.createRuleToggle('rule3')}
+            {this.toggle('rule3Enabled')}
           </div>
           <div className="rule">
             <h3>Rule 4: Bounds</h3>
-            {this.createRuleToggle('rule4')}
+            {this.toggle('rule4Enabled')}
           </div>
           <div className="rule">
             <h3>Rule 5: Velocity Limit</h3>
-            {this.createRuleToggle('rule5')}
+            {this.toggle('rule5Enabled')}
           </div>
         </div>
       </div>

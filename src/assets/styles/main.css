@@ -68,3 +68,8 @@ h2 {
   flex-grow: 1;
   height: 100vh;
 }
+
+.slider {
+  display: flex;
+  flex-direction: row;
+}

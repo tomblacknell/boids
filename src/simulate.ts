@@ -26,25 +26,25 @@ const createBoids = (num, width, height): Boid[] => {
 const updateBoids = (
   boids: Boid[],
   canvasRef: RefObject<HTMLCanvasElement>,
-  controls: { [rule: string]: Rule },
+  controls: { [ruleEnabled: string]: any },
 ) => boids.forEach(b => {
   if (canvasRef.current) {
     const { width, height } = canvasRef.current;
     let sum: Vector = new Vector(0, 0);
-    if (controls.rule1.enabled) {
+    if (controls.rule1Enabled) {
       sum = sum.add(cohesion(b, boids));
     }
-    if (controls.rule2.enabled) {
+    if (controls.rule2Enabled) {
       sum = sum.add(separation(b, boids))
     }
-    if (controls.rule3.enabled) {
+    if (controls.rule3Enabled) {
       sum = sum.add(alignment(b, boids))
     }
-    if (controls.rule4.enabled) {
+    if (controls.rule4Enabled) {
       sum = sum.add(boundPosition(b, width, height));
     }
     b.setVel(b.getVel().add(sum));
-    if (controls.rule5.enabled) {
+    if (controls.rule5Enabled) {
       limitVelocity(b);
     }
     b.setPos(b.getPos().add(b.getVel()));
