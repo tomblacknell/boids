@@ -151,12 +151,14 @@ const drawBoids = (canvas, boids) => {
   boids.forEach((boid) => {
     ctx.beginPath();
     ctx.arc(boid.getPos().getX(), boid.getPos().getY(), 8, 0, Math.PI * 2, false);
-    ctx.fillStyle = '#fdcece';
+    ctx.fillStyle = 'white';
     ctx.fill();
     ctx.beginPath();
-    ctx.arc(boid.getPos().getX(), boid.getPos().getY(), 4, 0, Math.PI * 2, false);
-    ctx.fillStyle = '#fc0303';
-    ctx.fill();
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 3;
+    ctx.moveTo(boid.getPos().getX(), boid.getPos().getY());
+    ctx.lineTo(boid.getPos().getX() + (boid.getVel().getX() * 5), boid.getPos().getY() + (boid.getVel().getY() * 5));
+    ctx.stroke();
     ctx.closePath();
   });
 };
