@@ -145,7 +145,7 @@ const drawBoids = (canvas, boids) => {
   const ctx = canvas.current.getContext('2d');
   ctx.clearRect(0, 0, canvas.current.width, canvas.current.height);
   ctx.beginPath();
-  ctx.fillStyle = '#000';
+  ctx.fillStyle = 'rgb(44 53 77)';
   ctx.rect(0, 0, canvas.current.width, canvas.current.height);
   ctx.fill();
   boids.forEach((boid) => {

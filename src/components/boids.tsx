@@ -90,10 +90,10 @@ class App extends React.Component<AppProps, AppState> {
     )
   }
 
-  slider(controlName: string, max: number, min: number) {
+  slider(controlLabel: string, controlName: string, max: number, min: number) {
     return (
       <div className="slider">
-        <p>{`${controlName}:`}</p>
+        <p>{`${controlLabel}:`}</p>
         <p>{this.state.controls[controlName]}</p>
         <input
           type="range"
@@ -125,13 +125,12 @@ class App extends React.Component<AppProps, AppState> {
         </div>
         <div className="controls">
           <h2>BoidSim</h2>
-          <p>Boids move according to several rules, configurable below.</p>
           <button onClick={() => {
             this.setState({ started: false, initialBoids: [] }, () => {
               this.start();
             })
           }}>Restart</button>
-          {this.slider('numberOfBoids', 500, 1)}
+          {this.slider('Number', 'numberOfBoids', 500, 1)}
           <div id="rule-1" className="rule">
             <h3>Rule 1: Cohesion</h3>
             {this.toggle('rule1Enabled')}
