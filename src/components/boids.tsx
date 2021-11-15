@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 import * as React from 'react';
 import { createRef } from 'react';
-import { createBoids, drawBoids, updateBoids } from '../simulate';
+import { createBoids, updateBoids } from '../simulate';
 import { Boid } from '../Boid';
 import Rule from '../Rule';
 
@@ -11,6 +11,63 @@ interface AppState {
   controls: { [ruleEnbaled: string]: any }
 };
 interface AppProps { };
+
+let gl;
+let glCanvas;
+
+// Aspect ratio and coordinate system
+// details
+
+let aspectRatio;
+let currentRotation = [0, 1];
+let currentScale = [1.0, 1.0];
+
+// Vertex information
+
+let boidArray;
+let boidBuffer;
+let vertexNumComponents;
+let vertexCount;
+
+// Rendering data shared with the scalers.
+
+let uScalingFactor;
+let uGlobalColor;
+let aVertexPosition;
+
+let shaderProgram;
+
+const vertexShader = `
+attribute vec2 aVertexPosition;
+
+uniform vec2 uScalingFactor;
+
+void main() {
+  // convert the position from pixels to 0.0 to 1.0
+  vec2 zeroToOne = aVertexPosition / uScalingFactor;
+
+  // convert from 0->1 to 0->2
+  vec2 zeroToTwo = zeroToOne * 2.0;
+
+  // convert from 0->2 to -1->+1 (clip space)
+  vec2 clipSpace = zeroToTwo - 1.0;
+
+  gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1.0);
+  gl_PointSize = 10.0;
+}
+`;
+
+const fragmentShader = `
+#ifdef GL_ES
+  precision highp float;
+#endif
+
+uniform vec4 uGlobalColor;
+
+void main() {
+  gl_FragColor = uGlobalColor;
+}
+`;
 
 class App extends React.Component<AppProps, AppState> {
 
@@ -42,19 +99,125 @@ class App extends React.Component<AppProps, AppState> {
     }
   };
 
+  compileShader(type, code) {
+    let shader = gl.createShader(type);
+
+    gl.shaderSource(shader, code);
+    gl.compileShader(shader);
+
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      console.log(`Error compiling ${type === gl.VERTEX_SHADER ? "vertex" : "fragment"} shader:`);
+      console.log(gl.getShaderInfoLog(shader));
+    }
+    return shader;
+  }
+
+  buildShaderProgram(shaderSet) {
+    let program = gl.createProgram();
+
+    shaderSet.forEach(shader => {
+      console.log(shader)
+      let compiledShader = this.compileShader(shader.type, shader.code);
+
+      if (compiledShader) {
+        gl.attachShader(program, compiledShader);
+      }
+    });
+
+    gl.linkProgram(program)
+
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.log("Error linking shader program:");
+      console.log(gl.getProgramInfoLog(program));
+    }
+
+    return program;
+  }
+
+  draw(boids) {
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
+    const vertexNumArray: number[] = [];
+    boids.forEach(boid => {
+      vertexNumArray.push(boid.getPos().getX());
+      vertexNumArray.push(boid.getPos().getY());
+    });
+    boidArray = Float32Array.from(vertexNumArray);
+    gl.bindBuffer(gl.ARRAY_BUFFER, boidBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, boidArray, gl.STATIC_DRAW);
+
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    gl.useProgram(shaderProgram);
+
+    uScalingFactor =
+      gl.getUniformLocation(shaderProgram, "uScalingFactor");
+    uGlobalColor =
+      gl.getUniformLocation(shaderProgram, "uGlobalColor");
+
+    gl.uniform4fv(uGlobalColor, [1.0, 1.0, 1.0, 1.0]);
+    gl.uniform2f(uScalingFactor, gl.canvas.width, gl.canvas.height);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, boidBuffer);
+
+    aVertexPosition =
+      gl.getAttribLocation(shaderProgram, "aVertexPosition");
+
+    gl.enableVertexAttribArray(aVertexPosition);
+    gl.vertexAttribPointer(aVertexPosition, vertexNumComponents, gl.FLOAT, false, 0, 0);
+
+    gl.drawArrays(gl.POINTS, 0, vertexCount);
+  };
+
   start() {
-    if (this.canvas.current) {
+    glCanvas = this.canvas.current;
+    if (glCanvas) {
+      gl = glCanvas.getContext('webgl');
+
+      const shaderSet = [
+        {
+          type: gl.VERTEX_SHADER,
+          code: vertexShader,
+        },
+        {
+          type: gl.FRAGMENT_SHADER,
+          code: fragmentShader,
+        },
+      ];
+
+      shaderProgram = this.buildShaderProgram(shaderSet);
+
+      aspectRatio = glCanvas.width / glCanvas.height;
+      currentScale = [1.0, aspectRatio];
+
+      const intialPositions: Boid[] = createBoids(
+        this.state.controls.numberOfBoids,
+        glCanvas.width,
+        glCanvas.height
+      );
+
+      const vertexNumArray: number[] = [];
+      intialPositions.forEach(boid => {
+        vertexNumArray.push(boid.getPos().getX());
+        vertexNumArray.push(boid.getPos().getY());
+      });
+
+      boidArray = Float32Array.from(vertexNumArray);
+      boidBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, boidBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, boidArray, gl.STATIC_DRAW);
+
+      vertexNumComponents = 2;
+      vertexCount = boidArray.length / vertexNumComponents;
+
       this.setState({
         ...this.state,
-        initialBoids: createBoids(
-          this.state.controls.numberOfBoids,
-          this.canvas.current.width,
-          this.canvas.current.height
-        )
+        initialBoids: intialPositions,
       }, () => {
         let boids: Boid[] = this.state.initialBoids;
         const animate = () => {
-          drawBoids(this.canvas, boids);
+          this.draw(boids);
           updateBoids(boids, this.canvas, this.state.controls);
           requestAnimationFrame(animate);
         };
