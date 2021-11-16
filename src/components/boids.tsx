@@ -3,6 +3,8 @@ import * as React from 'react';
 import { createRef } from 'react';
 import { createBoids, updateBoids } from '../simulate';
 import { Boid } from '../Boid';
+import { TransformationMatrix } from '../TransformationMatrix';
+import Canvas from './canvas';
 
 interface AppState {
   initialBoids: Boid[],
@@ -33,8 +35,7 @@ let vertexCount;
 let uScalingFactor;
 let uGlobalColor;
 let aVertexPosition;
-let uTranslation;
-let uScale;
+let uTransformationMatrix;
 
 let boidShaderProgram;
 let boxShaderProgram;
@@ -42,20 +43,12 @@ let boxShaderProgram;
 const boxVertexShader = `
 attribute vec2 aVertexPosition;
 uniform vec2 uScalingFactor;
-uniform vec2 uTranslation;
-uniform vec2 uScale;
+uniform mat3 uTransformationMatrix;
 
 void main() {
-  // rotate
-  // vec2 rotatedPosition = vec2(
-  //   aVertexPosition.x * 100 + aVertexPosition.y * 100,
-  //   aVertexPosition.y * 100 - aVertexPosition.x * 100);
 
-  // scale
-  vec2 scaledPosition = uScale * aVertexPosition;
-
-  // translate
-  vec2 position = scaledPosition + uTranslation;
+  // apply transformation
+  vec2 position = (uTransformationMatrix * vec3(aVertexPosition, 1)).xy;
 
   // convert the position from pixels to 0.0 to 1.0
   vec2 zeroToOne = position / uScalingFactor;
@@ -86,15 +79,12 @@ void main() {
 const boidVertexShader = `
 attribute vec2 aVertexPosition;
 uniform vec2 uScalingFactor;
-uniform vec2 uTranslation;
-uniform vec2 uScale;
+uniform mat3 uTransformationMatrix;
 
 void main() {
-  // scale
-  vec2 scaledPosition = uScale * aVertexPosition;
 
-  // translate
-  vec2 position = scaledPosition + uTranslation;
+  // apply transformation
+  vec2 position = (uTransformationMatrix * vec3(aVertexPosition, 1)).xy;
 
   // convert the position from pixels to 0.0 to 1.0
   vec2 zeroToOne = position / uScalingFactor;
@@ -136,9 +126,10 @@ class App extends React.Component<AppProps, AppState> {
         rule4Enabled: true,
         rule5Enabled: true,
         numberOfBoids: 50,
-        currentScale: 75,
-        translateX: 350,
-        translateY: 250,
+        currentScale: 100,
+        translateX: 0,
+        translateY: 0,
+        rotate: 0,
       },
     }
   }
@@ -213,13 +204,18 @@ class App extends React.Component<AppProps, AppState> {
 
     uScalingFactor = gl.getUniformLocation(boxShaderProgram, "uScalingFactor");
     uGlobalColor = gl.getUniformLocation(boxShaderProgram, "uGlobalColor");
-    uTranslation = gl.getUniformLocation(boxShaderProgram, "uTranslation");
-    uScale = gl.getUniformLocation(boxShaderProgram, "uScale");
+    uTransformationMatrix = gl.getUniformLocation(boxShaderProgram, "uTransformationMatrix")
 
     gl.uniform4fv(uGlobalColor, [0.0960, 0.150, 0.640, 1.0]);
     gl.uniform2f(uScalingFactor, gl.canvas.width, gl.canvas.height, 150.0);
-    gl.uniform2f(uTranslation, this.state.controls.translateX, this.state.controls.translateY, 0);
-    gl.uniform2f(uScale, this.state.controls.currentScale / 100, this.state.controls.currentScale / 100, 1);
+
+    var transformMatrix = new TransformationMatrix()
+      .translate(this.state.controls.translateX, this.state.controls.translateY)
+      .rotate(this.state.controls.rotate * (Math.PI / 180))
+      .scale(this.state.controls.currentScale / 100, this.state.controls.currentScale / 100)
+      // .translate(gl.canvas.width / 2, gl.canvas.height / 2); // move origin
+
+    gl.uniformMatrix3fv(uTransformationMatrix, false, transformMatrix.getValues());
 
     aVertexPosition = gl.getAttribLocation(boxShaderProgram, "aVertexPosition");
     gl.enableVertexAttribArray(aVertexPosition);
@@ -240,22 +236,15 @@ class App extends React.Component<AppProps, AppState> {
 
     gl.useProgram(boidShaderProgram);
 
-    uScalingFactor =
-      gl.getUniformLocation(boidShaderProgram, "uScalingFactor");
-    uGlobalColor =
-      gl.getUniformLocation(boidShaderProgram, "uGlobalColor");
-    uTranslation =
-      gl.getUniformLocation(boidShaderProgram, "uTranslation");
-    uScale =
-      gl.getUniformLocation(boidShaderProgram, "uScale");
+    uScalingFactor = gl.getUniformLocation(boidShaderProgram, "uScalingFactor");
+    uGlobalColor = gl.getUniformLocation(boidShaderProgram, "uGlobalColor");
+    uTransformationMatrix = gl.getUniformLocation(boidShaderProgram, "uTransformationMatrix")
 
     gl.uniform4fv(uGlobalColor, [1.0, 1.0, 1.0, 1.0]);
     gl.uniform2f(uScalingFactor, gl.canvas.width, gl.canvas.height);
-    gl.uniform2f(uTranslation, this.state.controls.translateX, this.state.controls.translateY);
-    gl.uniform2f(uScale, this.state.controls.currentScale / 100, this.state.controls.currentScale / 100);
+    gl.uniformMatrix3fv(uTransformationMatrix, false, transformMatrix.getValues());
 
-    aVertexPosition =
-      gl.getAttribLocation(boidShaderProgram, "aVertexPosition");
+    aVertexPosition = gl.getAttribLocation(boidShaderProgram, "aVertexPosition");
 
     gl.enableVertexAttribArray(aVertexPosition);
     gl.vertexAttribPointer(aVertexPosition, vertexNumComponents, gl.FLOAT, false, 0, 0);
@@ -384,14 +373,11 @@ class App extends React.Component<AppProps, AppState> {
   }
 
   render() {
+    console.log('rendering');
     return (
       <div className="panels">
         <div id="main" ref={this.main}>
-          <canvas
-            id="boid-canvas"
-            ref={this.canvas}
-            className="canvas"
-          />
+        <Canvas canvasRef={this.canvas} />
         </div>
         <div className="controls">
           <h2>BoidSim</h2>
@@ -402,8 +388,9 @@ class App extends React.Component<AppProps, AppState> {
           }}>Restart</button>
           {this.slider('Number', 'numberOfBoids', 500, 1)}
           {this.slider('Scale', 'currentScale', 100, 0)}
-          {this.slider('Translate X', 'translateX', 1000, 0)}
-          {this.slider('Translate Y', 'translateY', 1000, 0)}
+          {this.slider('Translate X', 'translateX', 2000, -2000)}
+          {this.slider('Translate Y', 'translateY', 2000, -2000)}
+          {this.slider('Rotate', 'rotate', 360, 0)}
           <div id="rule-1" className="rule">
             <h3>Rule 1: Cohesion</h3>
             {this.toggle('rule1Enabled')}
