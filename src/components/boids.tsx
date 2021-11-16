@@ -3,29 +3,28 @@ import * as React from 'react';
 import { createRef } from 'react';
 import { createBoids, updateBoids } from '../simulate';
 import { Boid } from '../Boid';
-import Rule from '../Rule';
 
 interface AppState {
   initialBoids: Boid[],
   started: Boolean,
-  controls: { [ruleEnbaled: string]: any }
+  controls: {
+    [ruleEnbaled: string]: any,
+    currentScale: number,
+    translateX: number,
+    translateY: number,
+  },
 };
 interface AppProps { };
 
 let gl;
 let glCanvas;
 
-// Aspect ratio and coordinate system
-// details
-
-let aspectRatio;
-let currentRotation = [0, 1];
-let currentScale = [1.0, 1.0];
-
 // Vertex information
 
 let boidArray;
 let boidBuffer;
+let boxBuffer;
+let boxArray;
 let vertexNumComponents;
 let vertexCount;
 
@@ -34,17 +33,32 @@ let vertexCount;
 let uScalingFactor;
 let uGlobalColor;
 let aVertexPosition;
+let uTranslation;
+let uScale;
 
-let shaderProgram;
+let boidShaderProgram;
+let boxShaderProgram;
 
-const vertexShader = `
+const boxVertexShader = `
 attribute vec2 aVertexPosition;
-
 uniform vec2 uScalingFactor;
+uniform vec2 uTranslation;
+uniform vec2 uScale;
 
 void main() {
+  // rotate
+  // vec2 rotatedPosition = vec2(
+  //   aVertexPosition.x * 100 + aVertexPosition.y * 100,
+  //   aVertexPosition.y * 100 - aVertexPosition.x * 100);
+
+  // scale
+  vec2 scaledPosition = uScale * aVertexPosition;
+
+  // translate
+  vec2 position = scaledPosition + uTranslation;
+
   // convert the position from pixels to 0.0 to 1.0
-  vec2 zeroToOne = aVertexPosition / uScalingFactor;
+  vec2 zeroToOne = position / uScalingFactor;
 
   // convert from 0->1 to 0->2
   vec2 zeroToTwo = zeroToOne * 2.0;
@@ -57,7 +71,46 @@ void main() {
 }
 `;
 
-const fragmentShader = `
+const boxFragmentShader = `
+#ifdef GL_ES
+  precision highp float;
+#endif
+
+uniform vec4 uGlobalColor;
+
+void main() {
+  gl_FragColor = uGlobalColor;
+}
+`;
+
+const boidVertexShader = `
+attribute vec2 aVertexPosition;
+uniform vec2 uScalingFactor;
+uniform vec2 uTranslation;
+uniform vec2 uScale;
+
+void main() {
+  // scale
+  vec2 scaledPosition = uScale * aVertexPosition;
+
+  // translate
+  vec2 position = scaledPosition + uTranslation;
+
+  // convert the position from pixels to 0.0 to 1.0
+  vec2 zeroToOne = position / uScalingFactor;
+
+  // convert from 0->1 to 0->2
+  vec2 zeroToTwo = zeroToOne * 2.0;
+
+  // convert from 0->2 to -1->+1 (clip space)
+  vec2 clipSpace = zeroToTwo - 1.0;
+
+  gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1.0);
+  gl_PointSize = 10.0;
+}
+`;
+
+const boidFragmentShader = `
 #ifdef GL_ES
   precision highp float;
 #endif
@@ -83,6 +136,9 @@ class App extends React.Component<AppProps, AppState> {
         rule4Enabled: true,
         rule5Enabled: true,
         numberOfBoids: 50,
+        currentScale: 75,
+        translateX: 350,
+        translateY: 250,
       },
     }
   }
@@ -137,32 +193,69 @@ class App extends React.Component<AppProps, AppState> {
   draw(boids) {
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
+    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    // draw the box
+    boxArray = Float32Array.from([
+      0, 0, 0,
+      gl.canvas.width, 0, 0,
+      0, gl.canvas.height, 0,
+
+      gl.canvas.width, 0, 0,
+      0, gl.canvas.height, 0,
+      gl.canvas.width, gl.canvas.height, 0
+    ]);
+    gl.bindBuffer(gl.ARRAY_BUFFER, boxBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, boxArray, gl.STATIC_DRAW);
+
+    gl.useProgram(boxShaderProgram);
+
+    uScalingFactor = gl.getUniformLocation(boxShaderProgram, "uScalingFactor");
+    uGlobalColor = gl.getUniformLocation(boxShaderProgram, "uGlobalColor");
+    uTranslation = gl.getUniformLocation(boxShaderProgram, "uTranslation");
+    uScale = gl.getUniformLocation(boxShaderProgram, "uScale");
+
+    gl.uniform4fv(uGlobalColor, [0.0960, 0.150, 0.640, 1.0]);
+    gl.uniform2f(uScalingFactor, gl.canvas.width, gl.canvas.height, 150.0);
+    gl.uniform2f(uTranslation, this.state.controls.translateX, this.state.controls.translateY, 0);
+    gl.uniform2f(uScale, this.state.controls.currentScale / 100, this.state.controls.currentScale / 100, 1);
+
+    aVertexPosition = gl.getAttribLocation(boxShaderProgram, "aVertexPosition");
+    gl.enableVertexAttribArray(aVertexPosition);
+    gl.vertexAttribPointer(aVertexPosition, vertexNumComponents, gl.FLOAT, false, 0, 0);
+
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+    //draw boids
     const vertexNumArray: number[] = [];
     boids.forEach(boid => {
       vertexNumArray.push(boid.getPos().getX());
       vertexNumArray.push(boid.getPos().getY());
+      vertexNumArray.push(boid.getPos().getZ());
     });
     boidArray = Float32Array.from(vertexNumArray);
     gl.bindBuffer(gl.ARRAY_BUFFER, boidBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, boidArray, gl.STATIC_DRAW);
 
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-
-    gl.useProgram(shaderProgram);
+    gl.useProgram(boidShaderProgram);
 
     uScalingFactor =
-      gl.getUniformLocation(shaderProgram, "uScalingFactor");
+      gl.getUniformLocation(boidShaderProgram, "uScalingFactor");
     uGlobalColor =
-      gl.getUniformLocation(shaderProgram, "uGlobalColor");
+      gl.getUniformLocation(boidShaderProgram, "uGlobalColor");
+    uTranslation =
+      gl.getUniformLocation(boidShaderProgram, "uTranslation");
+    uScale =
+      gl.getUniformLocation(boidShaderProgram, "uScale");
 
     gl.uniform4fv(uGlobalColor, [1.0, 1.0, 1.0, 1.0]);
     gl.uniform2f(uScalingFactor, gl.canvas.width, gl.canvas.height);
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, boidBuffer);
+    gl.uniform2f(uTranslation, this.state.controls.translateX, this.state.controls.translateY);
+    gl.uniform2f(uScale, this.state.controls.currentScale / 100, this.state.controls.currentScale / 100);
 
     aVertexPosition =
-      gl.getAttribLocation(shaderProgram, "aVertexPosition");
+      gl.getAttribLocation(boidShaderProgram, "aVertexPosition");
 
     gl.enableVertexAttribArray(aVertexPosition);
     gl.vertexAttribPointer(aVertexPosition, vertexNumComponents, gl.FLOAT, false, 0, 0);
@@ -175,21 +268,30 @@ class App extends React.Component<AppProps, AppState> {
     if (glCanvas) {
       gl = glCanvas.getContext('webgl');
 
-      const shaderSet = [
+      const boidShaderSet = [
         {
           type: gl.VERTEX_SHADER,
-          code: vertexShader,
+          code: boidVertexShader,
         },
         {
           type: gl.FRAGMENT_SHADER,
-          code: fragmentShader,
+          code: boidFragmentShader,
         },
       ];
 
-      shaderProgram = this.buildShaderProgram(shaderSet);
+      const boxShaderSet = [
+        {
+          type: gl.VERTEX_SHADER,
+          code: boxVertexShader,
+        },
+        {
+          type: gl.FRAGMENT_SHADER,
+          code: boxFragmentShader,
+        },
+      ];
 
-      aspectRatio = glCanvas.width / glCanvas.height;
-      currentScale = [1.0, aspectRatio];
+      boidShaderProgram = this.buildShaderProgram(boidShaderSet);
+      boxShaderProgram = this.buildShaderProgram(boxShaderSet);
 
       const intialPositions: Boid[] = createBoids(
         this.state.controls.numberOfBoids,
@@ -201,6 +303,7 @@ class App extends React.Component<AppProps, AppState> {
       intialPositions.forEach(boid => {
         vertexNumArray.push(boid.getPos().getX());
         vertexNumArray.push(boid.getPos().getY());
+        vertexNumArray.push(boid.getPos().getZ());
       });
 
       boidArray = Float32Array.from(vertexNumArray);
@@ -208,7 +311,11 @@ class App extends React.Component<AppProps, AppState> {
       gl.bindBuffer(gl.ARRAY_BUFFER, boidBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, boidArray, gl.STATIC_DRAW);
 
-      vertexNumComponents = 2;
+      boxBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, boxBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, boxArray, gl.STATIC_DRAW);
+
+      vertexNumComponents = 3;
       vertexCount = boidArray.length / vertexNumComponents;
 
       this.setState({
@@ -294,6 +401,9 @@ class App extends React.Component<AppProps, AppState> {
             })
           }}>Restart</button>
           {this.slider('Number', 'numberOfBoids', 500, 1)}
+          {this.slider('Scale', 'currentScale', 100, 0)}
+          {this.slider('Translate X', 'translateX', 1000, 0)}
+          {this.slider('Translate Y', 'translateY', 1000, 0)}
           <div id="rule-1" className="rule">
             <h3>Rule 1: Cohesion</h3>
             {this.toggle('rule1Enabled')}

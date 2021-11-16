@@ -11,10 +11,12 @@ const createBoids = (num, width, height): Boid[] => {
       new Vector(
         Math.random() * width,
         Math.random() * height,
+        Math.random() * height,
       ),
       new Vector(
         (Math.random() * 10) - 5,
-        (Math.random() * 10) - 5
+        (Math.random() * 10) - 5,
+        0
       ),
     );
     boids.push(boid);
@@ -29,7 +31,7 @@ const updateBoids = (
 ) => boids.forEach(b => {
   if (canvasRef.current) {
     const { width, height } = canvasRef.current;
-    let sum: Vector = new Vector(0, 0);
+    let sum: Vector = new Vector(0, 0, 0);
     if (controls.rule1Enabled) {
       sum = sum.add(cohesion(b, boids));
     }
@@ -57,7 +59,7 @@ const cohesion = (
   currentBoid: Boid,
   boids: Boid[]
 ): Vector => {
-  let center = new Vector(0, 0)
+  let center = new Vector(0, 0, 0)
   let boidsInRange = 0
   boids.forEach(boid => {
     if (currentBoid.getPos().distanceFrom(boid.getPos()) < visualRange) {
@@ -71,7 +73,7 @@ const cohesion = (
       .sub(currentBoid.getPos())
       .divScalar(200)
   }
-  return new Vector(0, 0)
+  return new Vector(0, 0, 0)
 };
 
 // boids steer away from eachother to avoid collision
@@ -79,7 +81,7 @@ const separation = (
   currentBoid: Boid,
   boids: Boid[]
 ): Vector => {
-  let move: Vector = new Vector(0, 0);
+  let move: Vector = new Vector(0, 0, 0);
   boids.forEach(boid => {
     if (boid.getId() !== currentBoid.getId()) {
       // const diff = boid.getPos().sub(currentBoid.getPos());
@@ -96,7 +98,7 @@ const alignment = (
   currentBoid: Boid,
   boids: Boid[]
 ): Vector => {
-  let avgV: Vector = new Vector(0, 0)
+  let avgV: Vector = new Vector(0, 0, 0)
   let boidsInRange = 0
   boids.forEach(boid => {
     if (currentBoid.getPos().distanceFrom(boid.getPos()) < visualRange) {
@@ -110,12 +112,12 @@ const alignment = (
       .sub(currentBoid.getVel())
       .divScalar(20);
   }
-  return new Vector(0, 0);
+  return new Vector(0, 0, 0);
 };
 
 // keep boids from leaving the canvas
 const boundPosition = (boid: Boid, xMax: number, yMax: number): Vector => {
-  let v: Vector = new Vector(0, 0);
+  let v: Vector = new Vector(0, 0, 0);
   const displace: number = 10;
   if (boid.getPos().getX() < 0) {
     v.setX(displace);
