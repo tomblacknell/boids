@@ -142,36 +142,9 @@ const limitVelocity = (b: Boid) => {
   }
 }
 
-// const render = (gl, boids) => {
-//   gl.viewport(0, 0, glCanvas.width, glCanvas.height);
-//   gl.clearColor(0.8, 0.9, 1.0, 1.0);
-//   gl.clear(gl.COLOR_BUFFER_BIT);
-
-
-  // ctx.clearRect(0, 0, canvas.current.width, canvas.current.height);
-  // ctx.beginPath();
-  // ctx.fillStyle = 'rgb(44 53 77)';
-  // ctx.rect(0, 0, canvas.current.width, canvas.current.height);
-  // ctx.fill();
-  // boids.forEach((boid) => {
-  //   ctx.beginPath();
-  //   ctx.arc(boid.getPos().getX(), boid.getPos().getY(), 8, 0, Math.PI * 2, false);
-  //   ctx.fillStyle = 'white';
-  //   ctx.fill();
-  //   ctx.beginPath();
-  //   ctx.strokeStyle = 'white';
-  //   ctx.lineWidth = 3;
-  //   ctx.moveTo(boid.getPos().getX(), boid.getPos().getY());
-  //   ctx.lineTo(boid.getPos().getX() + (boid.getVel().getX() * 5), boid.getPos().getY() + (boid.getVel().getY() * 5));
-  //   ctx.stroke();
-  //   ctx.closePath();
-  // });
-// };
-
 export {
   createBoids,
   updateBoids,
-  // render,
   cohesion,
   separation,
   alignment,

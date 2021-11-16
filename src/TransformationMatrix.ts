@@ -48,6 +48,16 @@ export class TransformationMatrix {
     return this.multiply(rotateMatrix);
   }
 
+  project(width, height): TransformationMatrix {
+    var projectMatrix = new TransformationMatrix();
+    projectMatrix.setValues([
+      2 / width, 0, 0,
+      0, -2 / height, 0,
+      -1, 1, 1
+    ]);
+    return projectMatrix;
+  }
+
   multiply(bMatrix: TransformationMatrix): TransformationMatrix {
     var a = this.values;
     var b = bMatrix.getValues();

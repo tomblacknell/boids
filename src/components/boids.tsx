@@ -42,24 +42,10 @@ let boxShaderProgram;
 
 const boxVertexShader = `
 attribute vec2 aVertexPosition;
-uniform vec2 uScalingFactor;
 uniform mat3 uTransformationMatrix;
 
 void main() {
-
-  // apply transformation
-  vec2 position = (uTransformationMatrix * vec3(aVertexPosition, 1)).xy;
-
-  // convert the position from pixels to 0.0 to 1.0
-  vec2 zeroToOne = position / uScalingFactor;
-
-  // convert from 0->1 to 0->2
-  vec2 zeroToTwo = zeroToOne * 2.0;
-
-  // convert from 0->2 to -1->+1 (clip space)
-  vec2 clipSpace = zeroToTwo - 1.0;
-
-  gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1.0);
+  gl_Position = vec4((uTransformationMatrix * vec3(aVertexPosition, 1)).xy, 0, 1);
   gl_PointSize = 10.0;
 }
 `;
@@ -78,24 +64,10 @@ void main() {
 
 const boidVertexShader = `
 attribute vec2 aVertexPosition;
-uniform vec2 uScalingFactor;
 uniform mat3 uTransformationMatrix;
 
 void main() {
-
-  // apply transformation
-  vec2 position = (uTransformationMatrix * vec3(aVertexPosition, 1)).xy;
-
-  // convert the position from pixels to 0.0 to 1.0
-  vec2 zeroToOne = position / uScalingFactor;
-
-  // convert from 0->1 to 0->2
-  vec2 zeroToTwo = zeroToOne * 2.0;
-
-  // convert from 0->2 to -1->+1 (clip space)
-  vec2 clipSpace = zeroToTwo - 1.0;
-
-  gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1.0);
+  gl_Position = vec4((uTransformationMatrix * vec3(aVertexPosition, 1)).xy, 0, 1);
   gl_PointSize = 10.0;
 }
 `;
@@ -126,9 +98,9 @@ class App extends React.Component<AppProps, AppState> {
         rule4Enabled: true,
         rule5Enabled: true,
         numberOfBoids: 50,
-        currentScale: 100,
-        translateX: 0,
-        translateY: 0,
+        currentScale: 55,
+        translateX: 900,
+        translateY: 300,
         rotate: 0,
       },
     }
@@ -202,18 +174,20 @@ class App extends React.Component<AppProps, AppState> {
 
     gl.useProgram(boxShaderProgram);
 
-    uScalingFactor = gl.getUniformLocation(boxShaderProgram, "uScalingFactor");
     uGlobalColor = gl.getUniformLocation(boxShaderProgram, "uGlobalColor");
     uTransformationMatrix = gl.getUniformLocation(boxShaderProgram, "uTransformationMatrix")
 
     gl.uniform4fv(uGlobalColor, [0.0960, 0.150, 0.640, 1.0]);
-    gl.uniform2f(uScalingFactor, gl.canvas.width, gl.canvas.height, 150.0);
+
+    var projectionMatrix = new TransformationMatrix()
+      .project(gl.canvas.width, gl.canvas.height)
 
     var transformMatrix = new TransformationMatrix()
+      .multiply(projectionMatrix)
       .translate(this.state.controls.translateX, this.state.controls.translateY)
       .rotate(this.state.controls.rotate * (Math.PI / 180))
       .scale(this.state.controls.currentScale / 100, this.state.controls.currentScale / 100)
-      // .translate(gl.canvas.width / 2, gl.canvas.height / 2); // move origin
+    // .translate(gl.canvas.width / 2, gl.canvas.height / 2); // move origin
 
     gl.uniformMatrix3fv(uTransformationMatrix, false, transformMatrix.getValues());
 
@@ -236,12 +210,10 @@ class App extends React.Component<AppProps, AppState> {
 
     gl.useProgram(boidShaderProgram);
 
-    uScalingFactor = gl.getUniformLocation(boidShaderProgram, "uScalingFactor");
     uGlobalColor = gl.getUniformLocation(boidShaderProgram, "uGlobalColor");
     uTransformationMatrix = gl.getUniformLocation(boidShaderProgram, "uTransformationMatrix")
 
     gl.uniform4fv(uGlobalColor, [1.0, 1.0, 1.0, 1.0]);
-    gl.uniform2f(uScalingFactor, gl.canvas.width, gl.canvas.height);
     gl.uniformMatrix3fv(uTransformationMatrix, false, transformMatrix.getValues());
 
     aVertexPosition = gl.getAttribLocation(boidShaderProgram, "aVertexPosition");
@@ -377,7 +349,7 @@ class App extends React.Component<AppProps, AppState> {
     return (
       <div className="panels">
         <div id="main" ref={this.main}>
-        <Canvas canvasRef={this.canvas} />
+          <Canvas canvasRef={this.canvas} />
         </div>
         <div className="controls">
           <h2>BoidSim</h2>
