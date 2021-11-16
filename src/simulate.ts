@@ -2,9 +2,8 @@ import { RefObject } from 'react';
 
 import { Boid } from './Boid';
 import { Vector } from './Vector';
-import Rule from './Rule';
 
-const createBoids = (num, width, height): Boid[] => {
+const createBoids = (num, width, height, depth): Boid[] => {
   const boids: Boid[] = [];
   for (let id = 0; id < num; id += 1) {
     const boid = new Boid(
@@ -12,10 +11,13 @@ const createBoids = (num, width, height): Boid[] => {
       new Vector(
         Math.random() * width,
         Math.random() * height,
+        Math.random() * depth,
+        // Math.random() * height,
       ),
       new Vector(
         (Math.random() * 10) - 5,
-        (Math.random() * 10) - 5
+        (Math.random() * 10) - 5,
+        (Math.random() * 10) - 5,
       ),
     );
     boids.push(boid);
@@ -30,7 +32,7 @@ const updateBoids = (
 ) => boids.forEach(b => {
   if (canvasRef.current) {
     const { width, height } = canvasRef.current;
-    let sum: Vector = new Vector(0, 0);
+    let sum: Vector = new Vector(0, 0, 0);
     if (controls.rule1Enabled) {
       sum = sum.add(cohesion(b, boids));
     }
@@ -41,7 +43,7 @@ const updateBoids = (
       sum = sum.add(alignment(b, boids))
     }
     if (controls.rule4Enabled) {
-      sum = sum.add(boundPosition(b, width, height));
+      sum = sum.add(boundPosition(b, width, height, 1000));
     }
     b.setVel(b.getVel().add(sum));
     if (controls.rule5Enabled) {
@@ -58,7 +60,7 @@ const cohesion = (
   currentBoid: Boid,
   boids: Boid[]
 ): Vector => {
-  let center = new Vector(0, 0)
+  let center = new Vector(0, 0, 0)
   let boidsInRange = 0
   boids.forEach(boid => {
     if (currentBoid.getPos().distanceFrom(boid.getPos()) < visualRange) {
@@ -72,7 +74,7 @@ const cohesion = (
       .sub(currentBoid.getPos())
       .divScalar(200)
   }
-  return new Vector(0, 0)
+  return new Vector(0, 0, 0)
 };
 
 // boids steer away from eachother to avoid collision
@@ -80,7 +82,7 @@ const separation = (
   currentBoid: Boid,
   boids: Boid[]
 ): Vector => {
-  let move: Vector = new Vector(0, 0);
+  let move: Vector = new Vector(0, 0, 0);
   boids.forEach(boid => {
     if (boid.getId() !== currentBoid.getId()) {
       // const diff = boid.getPos().sub(currentBoid.getPos());
@@ -97,7 +99,7 @@ const alignment = (
   currentBoid: Boid,
   boids: Boid[]
 ): Vector => {
-  let avgV: Vector = new Vector(0, 0)
+  let avgV: Vector = new Vector(0, 0, 0)
   let boidsInRange = 0
   boids.forEach(boid => {
     if (currentBoid.getPos().distanceFrom(boid.getPos()) < visualRange) {
@@ -111,12 +113,12 @@ const alignment = (
       .sub(currentBoid.getVel())
       .divScalar(20);
   }
-  return new Vector(0, 0);
+  return new Vector(0, 0, 0);
 };
 
 // keep boids from leaving the canvas
-const boundPosition = (boid: Boid, xMax: number, yMax: number): Vector => {
-  let v: Vector = new Vector(0, 0);
+const boundPosition = (boid: Boid, xMax: number, yMax: number, zMax: number): Vector => {
+  let v: Vector = new Vector(0, 0, 0);
   const displace: number = 10;
   if (boid.getPos().getX() < 0) {
     v.setX(displace);
@@ -130,6 +132,13 @@ const boundPosition = (boid: Boid, xMax: number, yMax: number): Vector => {
     v.setY(-displace);
   }
 
+  if (boid.getPos().getZ() < 0) {
+    v.setZ(displace);
+  } else if (boid.getPos().getZ() > zMax) {
+    v.setZ(-displace);
+  }
+
+
   return v;
 }
 
@@ -141,32 +150,9 @@ const limitVelocity = (b: Boid) => {
   }
 }
 
-const drawBoids = (canvas, boids) => {
-  const ctx = canvas.current.getContext('2d');
-  ctx.clearRect(0, 0, canvas.current.width, canvas.current.height);
-  ctx.beginPath();
-  ctx.fillStyle = 'rgb(44 53 77)';
-  ctx.rect(0, 0, canvas.current.width, canvas.current.height);
-  ctx.fill();
-  boids.forEach((boid) => {
-    ctx.beginPath();
-    ctx.arc(boid.getPos().getX(), boid.getPos().getY(), 8, 0, Math.PI * 2, false);
-    ctx.fillStyle = 'white';
-    ctx.fill();
-    ctx.beginPath();
-    ctx.strokeStyle = 'white';
-    ctx.lineWidth = 3;
-    ctx.moveTo(boid.getPos().getX(), boid.getPos().getY());
-    ctx.lineTo(boid.getPos().getX() + (boid.getVel().getX() * 5), boid.getPos().getY() + (boid.getVel().getY() * 5));
-    ctx.stroke();
-    ctx.closePath();
-  });
-};
-
 export {
   createBoids,
   updateBoids,
-  drawBoids,
   cohesion,
   separation,
   alignment,

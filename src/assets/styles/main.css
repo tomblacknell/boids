@@ -76,5 +76,5 @@ h2 {
 
 .slider {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
 }
