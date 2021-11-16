@@ -46,11 +46,11 @@ export class Vector {
   }
 
   mag(): number {
-    return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2));
+    return Math.sqrt(Math.pow(this.x, 2) + Math.pow(this.y, 2) + Math.pow(this.z, 2));
   }
 
   distanceFrom(b: Vector): number {
-    return Math.sqrt(Math.pow(this.x - b.getX(), 2) + Math.pow(this.y - b.getY(), 2));
+    return Math.sqrt(Math.pow(this.x - b.getX(), 2) + Math.pow(this.y - b.getY(), 2) + Math.pow(this.z - b.getZ(), 2));
   }
 
   divScalar(s: number): Vector {

@@ -3,7 +3,7 @@ import { RefObject } from 'react';
 import { Boid } from './Boid';
 import { Vector } from './Vector';
 
-const createBoids = (num, width, height): Boid[] => {
+const createBoids = (num, width, height, depth): Boid[] => {
   const boids: Boid[] = [];
   for (let id = 0; id < num; id += 1) {
     const boid = new Boid(
@@ -11,12 +11,13 @@ const createBoids = (num, width, height): Boid[] => {
       new Vector(
         Math.random() * width,
         Math.random() * height,
-        Math.random() * height,
+        Math.random() * depth,
+        // Math.random() * height,
       ),
       new Vector(
         (Math.random() * 10) - 5,
         (Math.random() * 10) - 5,
-        0
+        (Math.random() * 10) - 5,
       ),
     );
     boids.push(boid);
@@ -42,7 +43,7 @@ const updateBoids = (
       sum = sum.add(alignment(b, boids))
     }
     if (controls.rule4Enabled) {
-      sum = sum.add(boundPosition(b, width, height));
+      sum = sum.add(boundPosition(b, width, height, 1000));
     }
     b.setVel(b.getVel().add(sum));
     if (controls.rule5Enabled) {
@@ -116,7 +117,7 @@ const alignment = (
 };
 
 // keep boids from leaving the canvas
-const boundPosition = (boid: Boid, xMax: number, yMax: number): Vector => {
+const boundPosition = (boid: Boid, xMax: number, yMax: number, zMax: number): Vector => {
   let v: Vector = new Vector(0, 0, 0);
   const displace: number = 10;
   if (boid.getPos().getX() < 0) {
@@ -130,6 +131,13 @@ const boundPosition = (boid: Boid, xMax: number, yMax: number): Vector => {
   } else if (boid.getPos().getY() > yMax) {
     v.setY(-displace);
   }
+
+  if (boid.getPos().getZ() < 0) {
+    v.setZ(displace);
+  } else if (boid.getPos().getZ() > zMax) {
+    v.setZ(-displace);
+  }
+
 
   return v;
 }
