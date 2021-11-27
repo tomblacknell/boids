@@ -73,13 +73,16 @@ export class TransformationMatrix {
     return this.multiply(rotateMatrix);
   }
 
-  project(width, height, depth): TransformationMatrix {
+  project(left, right, bottom, top, near, far): TransformationMatrix {
     var projectMatrix = new TransformationMatrix();
     projectMatrix.setValues([
-      2 / width, 0, 0, 0,
-      0, -2 / height, 0, 0,
-      0, 0, 0, 0,
-      -1, 1, 0, 1,
+      2 / (right - left), 0, 0, 0,
+      0, 2 / (top - bottom), 0, 0,
+      0, 0, 2 / (near - far), 0,
+      (left + right) / (left - right),
+      (bottom + top) / (bottom - top),
+      (near + far) / (near - far),
+      1,
     ]);
     return projectMatrix;
   }

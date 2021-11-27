@@ -12,7 +12,6 @@ const createBoids = (num, width, height, depth): Boid[] => {
         Math.random() * width,
         Math.random() * height,
         Math.random() * depth,
-        // Math.random() * height,
       ),
       new Vector(
         (Math.random() * 10) - 5,
