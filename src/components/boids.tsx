@@ -32,7 +32,7 @@ let vertexCount;
 
 // Rendering data shared with the scalers.
 
-let uScalingFactor;
+let uFudgeFactor;
 let uGlobalColor;
 let aVertexPosition;
 let uTransformationMatrix;
@@ -43,10 +43,13 @@ let boxShaderProgram;
 const boxVertexShader = `
 attribute vec4 aVertexPosition;
 uniform mat4 uTransformationMatrix;
+uniform float uFudgeFactor;
 
 void main() {
-  gl_Position = uTransformationMatrix * aVertexPosition;
-  gl_PointSize = 10.0;
+  vec4 position = uTransformationMatrix * aVertexPosition;
+  float zToDivideBy = 1.0 + position.z * uFudgeFactor;
+
+  gl_Position = vec4(position.xy / zToDivideBy, position.zw);
 }
 `;
 
@@ -65,9 +68,13 @@ void main() {
 const boidVertexShader = `
 attribute vec4 aVertexPosition;
 uniform mat4 uTransformationMatrix;
+uniform float uFudgeFactor;
 
 void main() {
-  gl_Position = uTransformationMatrix * aVertexPosition;
+  vec4 position = uTransformationMatrix * aVertexPosition;
+  float zToDivideBy = 1.0 + position.z * uFudgeFactor;
+
+  gl_Position = vec4(position.xy / zToDivideBy, position.zw);
   gl_PointSize = 10.0;
 }
 `;
@@ -101,6 +108,7 @@ class App extends React.Component<AppProps, AppState> {
         currentScale: 55,
         translateX: 900,
         translateY: 500,
+        translateZ: 0,
         xRotate: 21,
         yRotate: 15,
         zRotate: 0,
@@ -207,20 +215,27 @@ class App extends React.Component<AppProps, AppState> {
 
     uGlobalColor = gl.getUniformLocation(boxShaderProgram, "uGlobalColor");
     uTransformationMatrix = gl.getUniformLocation(boxShaderProgram, "uTransformationMatrix")
+    uFudgeFactor = gl.getUniformLocation(boxShaderProgram, "uFudgeFactor");
 
+    gl.uniform1f(uFudgeFactor, 1);
     gl.uniform4fv(uGlobalColor, [0.0960, 0.150, 0.640, .8]);
 
+    var left = 0;
+    var right = gl.canvas.width;
+    var top = 0;
+    var bottom = gl.canvas.height;
+    var near = 3000;
+    var far = -3000;
     var projectionMatrix = new TransformationMatrix()
-      .project(gl.canvas.width, gl.canvas.height, 1000)
+      .project(left, right, bottom, top, near, far);
 
     var transformMatrix = new TransformationMatrix()
       .multiply(projectionMatrix)
-      .translate(this.state.controls.translateX, this.state.controls.translateY, 0) // add z translate
+      .translate(this.state.controls.translateX, this.state.controls.translateY, this.state.controls.translateZ) // add z translate
       .xRotate(this.state.controls.xRotate * (Math.PI / 180))
       .yRotate(this.state.controls.yRotate * (Math.PI / 180))
       .zRotate(this.state.controls.zRotate * (Math.PI / 180))
       .scale(this.state.controls.currentScale / 100, this.state.controls.currentScale / 100, this.state.controls.currentScale / 100)
-    // .translate(gl.canvas.width / 2, gl.canvas.height / 2); // move origin
 
     gl.uniformMatrix4fv(uTransformationMatrix, false, transformMatrix.getValues());
 
@@ -245,9 +260,11 @@ class App extends React.Component<AppProps, AppState> {
 
     uGlobalColor = gl.getUniformLocation(boidShaderProgram, "uGlobalColor");
     uTransformationMatrix = gl.getUniformLocation(boidShaderProgram, "uTransformationMatrix")
+    uFudgeFactor = gl.getUniformLocation(boidShaderProgram, "uFudgeFactor");
 
     gl.uniform4fv(uGlobalColor, [1.0, 1.0, 1.0, 1.0]);
     gl.uniformMatrix4fv(uTransformationMatrix, false, transformMatrix.getValues());
+    gl.uniform1f(uFudgeFactor, 1);
 
     aVertexPosition = gl.getAttribLocation(boidShaderProgram, "aVertexPosition");
 
@@ -395,6 +412,7 @@ class App extends React.Component<AppProps, AppState> {
           {this.slider('Scale', 'currentScale', 100, 0)}
           {this.slider('Translate X', 'translateX', 2000, -2000)}
           {this.slider('Translate Y', 'translateY', 2000, -2000)}
+          {this.slider('Translate Z', 'translateZ', 2000, -2000)}
           {this.slider('Rotate X', 'xRotate', 360, 0)}
           {this.slider('Rotate Y', 'yRotate', 360, 0)}
           {this.slider('Rotate Z', 'zRotate', 360, 0)}
